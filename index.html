@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Job Search Command Center | Riham Tarabay</title>
+<meta name="description" content="Executive dashboard to track job applications, follow-ups, and response analytics. Runs entirely in your browser — no account, no backend.">
+<style>
+  :root{
+    --bg:#F8FAFC; --surface:#FFFFFF; --surface2:#EEF2F7; --text:#0F1B2D; --text2:#64748B;
+    --border:#E2E8F0; --accent:#0D9488; --accent-soft:#CCFBF1;
+    --blue:#3B82F6; --amber:#F59E0B; --green:#46A171; --red:#E56458; --slate:#64748B;
+    --shadow:0 1px 2px rgba(15,27,45,.05),0 4px 12px rgba(15,27,45,.04);
+  }
+  [data-theme="dark"]{
+    --bg:#0B1522; --surface:#0F1B2D; --surface2:#16263C; --text:#F1F5F9; --text2:#94A3B8;
+    --border:#24344D; --accent:#2DD4BF; --accent-soft:#134E4A; --shadow:none;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,-apple-system,"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;font-size:15px}
+  .mono{font-family:"JetBrains Mono",Menlo,Consolas,monospace}
+  a{color:var(--accent)}
+  .skip{position:absolute;top:0;left:0;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;background:var(--accent);color:#fff;padding:8px 16px;z-index:100}
+  .skip:focus{width:auto;height:auto;clip:auto}
+  button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+  /* TOPBAR */
+  .topbar{position:sticky;top:0;z-index:40;background:color-mix(in srgb,var(--bg) 90%,transparent);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
+  .top-in{display:flex;align-items:center;gap:12px;padding:12px 0;flex-wrap:wrap}
+  .logo{font-weight:800;font-size:16px;letter-spacing:-.02em;display:flex;align-items:center;gap:8px}
+  .logo-dot{width:10px;height:10px;border-radius:3px;background:var(--accent)}
+  .logo small{font-weight:600;color:var(--text2);font-size:12px}
+  .top-actions{display:flex;gap:8px;margin-inline-start:auto;flex-wrap:wrap}
+  .btn{border:1px solid var(--border);background:var(--surface);color:var(--text);border-radius:8px;padding:8px 14px;font:600 13px Inter,sans-serif;cursor:pointer;min-height:38px}
+  .btn:hover{border-color:var(--accent)}
+  .btn-acc{background:var(--accent);border-color:var(--accent);color:#04211c}
+  .btn-acc:hover{filter:brightness(1.06)}
+  .btn-danger{color:var(--red)}
+  /* KPI */
+  main{padding:24px 0 56px}
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:14px}
+  .kpi{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow)}
+  .kpi .lab{font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.08em}
+  .kpi .val{font-size:30px;font-weight:800;letter-spacing:-.02em;margin-top:4px;font-family:"JetBrains Mono",Menlo,monospace}
+  .kpi .sub{font-size:12px;color:var(--text2);margin-top:2px}
+  .kpi .val .unit{font-size:16px;color:var(--text2)}
+  /* GRID */
+  .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:14px;margin-bottom:14px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;box-shadow:var(--shadow)}
+  .card h2{margin:0 0 4px;font-size:15px;letter-spacing:-.01em}
+  .card .hint{font-size:12px;color:var(--text2);margin:0 0 14px}
+  /* FUNNEL */
+  .fun-row{display:grid;grid-template-columns:110px 1fr 34px;align-items:center;gap:10px;margin:10px 0}
+  .fun-lab{font-size:12.5px;font-weight:600;color:var(--text2)}
+  .fun-track{background:var(--surface2);border-radius:6px;height:22px;overflow:hidden}
+  .fun-bar{height:100%;background:var(--accent);border-radius:6px;min-width:2px;transition:width .3s}
+  .fun-n{font:700 13px "JetBrains Mono",monospace;text-align:end}
+  /* REMINDERS */
+  .rem{display:flex;align-items:center;gap:10px;padding:9px 10px;border:1px solid var(--border);border-radius:8px;margin-bottom:8px;font-size:13.5px}
+  .rem .dot{width:8px;height:8px;border-radius:50%;flex:none}
+  .rem.overdue{border-color:color-mix(in srgb,var(--red) 45%,var(--border))}
+  .rem.overdue .dot{background:var(--red)}
+  .rem.today .dot{background:var(--amber)}
+  .rem .when{margin-inline-start:auto;font:600 12px "JetBrains Mono",monospace;color:var(--text2);white-space:nowrap}
+  .rem b{font-weight:700}
+  .empty-min{font-size:13px;color:var(--text2);padding:8px 0}
+  /* TABLE */
+  .toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .toolbar input[type="search"]{flex:1;min-width:160px}
+  input,select,textarea{padding:9px 11px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font:400 14px Inter,sans-serif}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th{text-align:start;font-size:11.5px;text-transform:uppercase;letter-spacing:.07em;color:var(--text2);padding:8px 10px;border-bottom:1px solid var(--border)}
+  td{padding:10px;border-bottom:1px solid var(--border);vertical-align:middle}
+  tr:last-child td{border-bottom:none}
+  td .co{font-weight:700}
+  td .role{font-size:12.5px;color:var(--text2)}
+  .badge-sel{border-radius:999px;font:600 12px Inter,sans-serif;padding:5px 10px;border:1px solid var(--border);cursor:pointer;-webkit-appearance:none;appearance:none}
+  .st-saved{background:var(--surface2);color:var(--text2)}
+  .st-applied{background:color-mix(in srgb,var(--blue) 14%,var(--surface));color:var(--blue);border-color:color-mix(in srgb,var(--blue) 40%,var(--border))}
+  .st-screening{background:color-mix(in srgb,var(--amber) 14%,var(--surface));color:var(--amber);border-color:color-mix(in srgb,var(--amber) 40%,var(--border))}
+  .st-interview{background:var(--accent-soft);color:var(--accent);border-color:color-mix(in srgb,var(--accent) 40%,var(--border))}
+  .st-offer{background:color-mix(in srgb,var(--green) 14%,var(--surface));color:var(--green);border-color:color-mix(in srgb,var(--green) 40%,var(--border))}
+  .st-rejected{background:color-mix(in srgb,var(--red) 12%,var(--surface));color:var(--red);border-color:color-mix(in srgb,var(--red) 40%,var(--border))}
+  .date-cell{font:500 12.5px "JetBrains Mono",monospace;color:var(--text2);white-space:nowrap}
+  .date-cell.overdue{color:var(--red);font-weight:700}
+  .date-cell.today{color:var(--amber);font-weight:700}
+  .notes-cell{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2);font-size:12.5px}
+  .row-btn{border:none;background:none;cursor:pointer;font-size:14px;padding:4px 6px;color:var(--text2);border-radius:6px}
+  .row-btn:hover{background:var(--surface2);color:var(--text)}
+  .tbl-scroll{overflow-x:auto}
+  /* EMPTY STATE */
+  .empty{text-align:center;padding:44px 16px}
+  .empty h3{margin:0 0 6px;font-size:17px}
+  .empty p{color:var(--text2);font-size:14px;margin:0 0 18px}
+  /* DIALOG */
+  dialog{border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:0;width:min(480px,92vw)}
+  dialog::backdrop{background:rgba(11,21,34,.55);backdrop-filter:blur(2px)}
+  .dlg-in{padding:22px}
+  .dlg-in h3{margin:0 0 16px;font-size:17px}
+  .frm{display:grid;gap:12px}
+  .frm label{font-weight:600;font-size:12.5px;display:block;margin-bottom:4px}
+  .frm input,.frm select,.frm textarea{width:100%}
+  .frm textarea{min-height:70px;resize:vertical}
+  .frm-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .dlg-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+  /* CHART */
+  .chart-svg{width:100%;height:auto;display:block}
+  .footer-note{text-align:center;color:var(--text2);font-size:12px;margin-top:26px}
+  @media(max-width:900px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+  @media(max-width:520px){.kpis{grid-template-columns:1fr 1fr}.kpi .val{font-size:24px}}
+</style>
+</head>
+<body>
+<a class="skip" href="#main" data-i18n="skip">Skip to content</a>
+<div class="topbar">
+  <div class="wrap top-in">
+    <span class="logo"><span class="logo-dot" aria-hidden="true"></span><span data-i18n="app">Job Search Command Center</span>&nbsp;<small>Riham Tarabay</small></span>
+    <div class="top-actions">
+      <button class="btn" id="csvBtn" data-i18n="csv">Export CSV</button>
+      <button class="btn" id="langBtn" aria-label="Switch language">العربية</button>
+      <button class="btn" id="themeBtn" aria-label="Toggle dark mode">☾</button>
+      <button class="btn btn-acc" id="addBtn" data-i18n="add">+ Add application</button>
+    </div>
+  </div>
+</div>
+
+<main id="main" class="wrap">
+  <div class="kpis">
+    <div class="kpi"><div class="lab" data-i18n="k_total">Total applications</div><div class="val" id="kTotal">0</div><div class="sub" data-i18n="k_total_s">all time</div></div>
+    <div class="kpi"><div class="lab" data-i18n="k_active">Active pipeline</div><div class="val" id="kActive">0</div><div class="sub" data-i18n="k_active_s">awaiting outcome</div></div>
+    <div class="kpi"><div class="lab" data-i18n="k_rate">Response rate</div><div class="val" id="kRate">–</div><div class="sub" data-i18n="k_rate_s">of submitted applications</div></div>
+    <div class="kpi"><div class="lab" data-i18n="k_int">Interviews + offers</div><div class="val" id="kInt">0</div><div class="sub" data-i18n="k_int_s">reached late stages</div></div>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <h2 data-i18n="c_week">Applications per week</h2>
+      <p class="hint" data-i18n="c_week_h">Last 8 weeks, by date applied</p>
+      <div id="weekChart" dir="ltr"></div>
+    </div>
+    <div class="card">
+      <h2 data-i18n="c_fun">Status funnel</h2>
+      <p class="hint" data-i18n="c_fun_h">How far applications progress</p>
+      <div id="funnel"></div>
+    </div>
+  </div>
+
+  <div class="card" style="margin-bottom:14px">
+    <h2 data-i18n="c_rem">Follow-up reminders</h2>
+    <p class="hint" data-i18n="c_rem_h">Applications with a follow-up date due today or overdue</p>
+    <div id="reminders"></div>
+  </div>
+
+  <div class="card">
+    <h2 data-i18n="c_pipe">Pipeline</h2>
+    <p class="hint" data-i18n="c_pipe_h">Every application, editable in place</p>
+    <div class="toolbar">
+      <input type="search" id="q" data-i18n-ph="search_ph" placeholder="Search company or role…" aria-label="Search">
+      <select id="stFilter" aria-label="Filter by status"></select>
+    </div>
+    <div id="tableBox" class="tbl-scroll"></div>
+  </div>
+
+  <p class="footer-note"><span data-i18n="foot">Data stays in this browser (localStorage) — nothing is uploaded anywhere.</span> · © <span id="yr">2026</span> Riham Tarabay</p>
+</main>
+
+<dialog id="dlg">
+  <form class="dlg-in" id="appForm" method="dialog">
+    <h3 id="dlgTitle" data-i18n="d_add">Add application</h3>
+    <div class="frm">
+      <div><label for="f-co" data-i18n="f_co">Company</label><input id="f-co" required></div>
+      <div><label for="f-role" data-i18n="f_role">Role</label><input id="f-role" required></div>
+      <div><label for="f-link" data-i18n="f_link">Job posting link (optional)</label><input id="f-link" type="url" placeholder="https://…"></div>
+      <div class="frm-2">
+        <div><label for="f-st" data-i18n="f_st">Status</label><select id="f-st"></select></div>
+        <div><label for="f-date" data-i18n="f_date">Date applied</label><input id="f-date" type="date"></div>
+      </div>
+      <div><label for="f-fu" data-i18n="f_fu">Follow-up date (optional)</label><input id="f-fu" type="date"></div>
+      <div><label for="f-notes" data-i18n="f_notes">Notes (contact, salary, next step…)</label><textarea id="f-notes"></textarea></div>
+    </div>
+    <div class="dlg-actions">
+      <button class="btn" type="button" id="cancelBtn" data-i18n="d_cancel">Cancel</button>
+      <button class="btn btn-acc" type="submit" id="saveBtn" data-i18n="d_save">Save</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+"use strict";
+const STATUSES=["saved","applied","screening","interview","offer","rejected"];
+const L={
+ en:{
+  saved:"Saved",applied:"Applied",screening:"Screening",interview:"Interview",offer:"Offer",rejected:"Rejected",
+  all:"All statuses",th_co:"Company / Role",th_st:"Status",th_ap:"Applied",th_fu:"Follow-up",th_no:"Notes",th_ac:"",
+  empty_h:"No applications yet",empty_p:"Add your first application, or load sample data to see the dashboard in action.",
+  load_sample:"Load sample data",no_rem:"Nothing due — you're on top of your follow-ups. ✓",
+  overdue:"overdue",due_today:"due today",d_edit:"Edit application",del_confirm:"Delete this application?",
+  follow_up_with:"Follow up with",re:"re",days_late:"d late",today_w:"today",no_matches:"No applications match your search.",
+  csv_status:"Status",csv_co:"Company",csv_role:"Role",csv_link:"Link",csv_ap:"Date Applied",csv_fu:"Follow-up",csv_no:"Notes",
+  wk:"w/o"
+ },
+ ar:{
+  saved:"محفوظ",applied:"تم التقديم",screening:"فرز أولي",interview:"مقابلة",offer:"عرض",rejected:"مرفوض",
+  all:"كل الحالات",th_co:"الشركة / الوظيفة",th_st:"الحالة",th_ap:"تاريخ التقديم",th_fu:"المتابعة",th_no:"ملاحظات",th_ac:"",
+  empty_h:"لا توجد طلبات بعد",empty_p:"أضيفي أول طلب توظيف، أو حمّلي بيانات تجريبية لرؤية اللوحة بشكل كامل.",
+  load_sample:"تحميل بيانات تجريبية",no_rem:"لا متابعات مستحقة — أنت على اطلاع كامل. ✓",
+  overdue:"متأخرة",due_today:"مستحقة اليوم",d_edit:"تعديل الطلب",del_confirm:"حذف هذا الطلب؟",
+  follow_up_with:"تابعي مع",re:"بخصوص",days_late:"يوم تأخير",today_w:"اليوم",no_matches:"لا توجد طلبات مطابقة لبحثك.",
+  csv_status:"الحالة",csv_co:"الشركة",csv_role:"الوظيفة",csv_link:"الرابط",csv_ap:"تاريخ التقديم",csv_fu:"المتابعة",csv_no:"ملاحظات",
+  wk:"أسبوع"
+ }
+};
+const AR_STATIC={
+ skip:"تخطَّ إلى المحتوى",app:"مركز قيادة البحث عن وظيفة",csv:"تصدير CSV",add:"+ إضافة طلب",
+ k_total:"إجمالي الطلبات",k_total_s:"منذ البداية",k_active:"قيد المتابعة",k_active_s:"بانتظار النتيجة",
+ k_rate:"معدل الرد",k_rate_s:"من الطلبات المقدمة",k_int:"مقابلات + عروض",k_int_s:"وصلت لمراحل متقدمة",
+ c_week:"الطلبات أسبوعياً",c_week_h:"آخر 8 أسابيع، حسب تاريخ التقديم",c_fun:"قمع الحالات",c_fun_h:"إلى أي مدى تتقدم الطلبات",
+ c_rem:"تذكيرات المتابعة",c_rem_h:"طلبات موعد متابعتها اليوم أو متأخر",c_pipe:"خط الطلبات",c_pipe_h:"كل طلب، قابل للتعديل مباشرة",
+ foot:"بياناتك تبقى في هذا المتصفح (localStorage) — لا يُرفع أي شيء لأي خادم.",
+ d_add:"إضافة طلب",f_co:"الشركة",f_role:"الوظيفة",f_link:"رابط الوظيفة (اختياري)",f_st:"الحالة",f_date:"تاريخ التقديم",
+ f_fu:"تاريخ المتابعة (اختياري)",f_notes:"ملاحظات (جهة الاتصال، الراتب، الخطوة التالية…)",d_cancel:"إلغاء",d_save:"حفظ",
+ search_ph:"ابحثي عن شركة أو وظيفة…"
+};
+const EN_STATIC={};document.querySelectorAll('[data-i18n]').forEach(el=>{EN_STATIC[el.getAttribute('data-i18n')]=el.innerHTML;});
+EN_STATIC.search_ph=document.getElementById('q').placeholder;
+
+const params=new URLSearchParams(location.search);
+let lang=params.get('lang')||localStorage.getItem('rt-lang')||'en';
+let theme=params.get('theme')||localStorage.getItem('rt-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+let apps=load();
+let demoMode=false;
+if(params.get('demo')==='1'&&apps.length===0){apps=sample();demoMode=true;}
+let editingId=null;
+
+function t(k){return (L[lang]&&L[lang][k])||L.en[k]||k;}
+function load(){try{return JSON.parse(localStorage.getItem('rt-jobs')||'[]');}catch(e){return[];}}
+function save(){if(!demoMode)localStorage.setItem('rt-jobs',JSON.stringify(apps));}
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function addDays(base,n){const d=new Date(base);d.setDate(d.getDate()+n);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function fmtDate(s){if(!s)return'–';const d=new Date(s+'T00:00:00');return d.toLocaleDateString(lang==='ar'?'ar':'en-GB',{day:'numeric',month:'short'});}
+
+function sample(){
+  const T=todayStr();
+  const mk=(co,role,st,agoApplied,fuOffset,notes,link)=>({id:uid(),company:co,role:role,status:st,applied:addDays(T,-agoApplied),followup:fuOffset===null?'':addDays(T,fuOffset),notes:notes||'',link:link||''});
+  return[
+    mk('Deel','Junior Data Analyst','interview',3,1,'2nd round Tue — prep SQL window functions'),
+    mk('Anghami','AI Engineer — Recommendations','screening',5,-1,'Recruiter: Sarah. Asked for portfolio link'),
+    mk('Murex','Software Engineer, Data','applied',2,3,'Referred by LAU alumni'),
+    mk('Careem','BI Analyst','applied',6,0,'Follow up with hiring manager on LinkedIn'),
+    mk('Aleph','ML Engineer Intern → FT','offer',24,null,'Offer received — respond by Friday!'),
+    mk('BOT (Beirut)','AI Data Quality Lead','screening',9,2,'They loved annotation background'),
+    mk('Toters','Data Analyst','rejected',20,null,'Rejected after HR screen — ask for feedback'),
+    mk('Zaka AI','Junior ML Engineer','applied',12,-3,'Sent follow-up? check thread'),
+    mk('FOO','Data Engineer','applied',13,null,''),
+    mk('Malia Group','BI Developer','saved',0,null,'Deadline next week — tailor CV first'),
+    mk('IPT Powertech','Data Analyst','rejected',27,null,''),
+    mk('Cardinal Health (ref)','QA Data Analyst','interview',17,4,'Panel interview — STAR stories ready')
+  ];
+}
+
+/* ---------- KPIs ---------- */
+function stageIdx(st){return STATUSES.indexOf(st);}
+function computeKpis(){
+  const total=apps.length;
+  const active=apps.filter(a=>['saved','applied','screening','interview'].includes(a.status)).length;
+  const submitted=apps.filter(a=>a.status!=='saved');
+  const responded=submitted.filter(a=>['screening','interview','offer','rejected'].includes(a.status));
+  const rate=submitted.length?Math.round(100*responded.length/submitted.length):null;
+  const late=apps.filter(a=>['interview','offer'].includes(a.status)).length;
+  document.getElementById('kTotal').textContent=total;
+  document.getElementById('kActive').textContent=active;
+  document.getElementById('kRate').innerHTML=rate===null?'–':rate+'<span class="unit">%</span>';
+  document.getElementById('kInt').textContent=late;
+}
+
+/* ---------- Weekly chart (SVG) ---------- */
+function weekStart(d){const x=new Date(d);const day=(x.getDay()+6)%7;x.setDate(x.getDate()-day);x.setHours(0,0,0,0);return x;}
+function renderWeekChart(){
+  const box=document.getElementById('weekChart');
+  const now=weekStart(new Date());
+  const weeks=[];
+  for(let i=7;i>=0;i--){const s=new Date(now);s.setDate(s.getDate()-7*i);weeks.push(s);}
+  const counts=weeks.map(s=>{const e=new Date(s);e.setDate(e.getDate()+7);
+    return apps.filter(a=>{if(!a.applied||a.status==='saved')return false;const d=new Date(a.applied+'T00:00:00');return d>=s&&d<e;}).length;});
+  const W=520,H=190,pad=8,axis=22,bw=W/8;
+  const max=Math.max(...counts,1);
+  let bars='';
+  counts.forEach((c,i)=>{
+    const h=c===0?2:Math.round((H-pad-axis-24)*c/max);
+    const x=i*bw+10,y=H-axis-h;
+    bars+=`<rect x="${x}" y="${y}" width="${bw-20}" height="${h}" rx="5" fill="${c===0?'var(--surface2)':'var(--accent)'}"/>`;
+    bars+=`<text x="${x+(bw-20)/2}" y="${y-7}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--text)" font-family="JetBrains Mono,monospace">${c||''}</text>`;
+    const lab=(weeks[i].getMonth()+1)+'/'+weeks[i].getDate();
+    bars+=`<text x="${x+(bw-20)/2}" y="${H-6}" text-anchor="middle" font-size="10.5" fill="var(--text2)">${lab}</text>`;
+  });
+  box.innerHTML=`<svg class="chart-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Applications per week">${bars}<line x1="4" y1="${H-axis+4}" x2="${W-4}" y2="${H-axis+4}" stroke="var(--border)"/></svg>`;
+}
+
+/* ---------- Funnel ---------- */
+function renderFunnel(){
+  const box=document.getElementById('funnel');
+  const stages=['applied','screening','interview','offer'];
+  const reached=st=>{const i=stageIdx(st);return apps.filter(a=>a.status==='rejected'?i<=1:stageIdx(a.status)>=i).length;};
+  const base=Math.max(reached('applied'),1);
+  box.innerHTML=stages.map(st=>{
+    const n=reached(st);const w=Math.round(100*n/base);
+    return `<div class="fun-row"><span class="fun-lab">${esc(t(st))}</span><div class="fun-track"><div class="fun-bar" style="width:${w}%"></div></div><span class="fun-n">${n}</span></div>`;
+  }).join('');
+}
+
+/* ---------- Reminders ---------- */
+function renderReminders(){
+  const box=document.getElementById('reminders');
+  const T=todayStr();
+  const due=apps.filter(a=>a.followup&&a.followup<=T&&['saved','applied','screening','interview'].includes(a.status))
+    .sort((a,b)=>a.followup<b.followup?-1:1);
+  if(!due.length){box.innerHTML=`<p class="empty-min">${esc(t('no_rem'))}</p>`;return;}
+  box.innerHTML=due.map(a=>{
+    const days=Math.round((new Date(T)-new Date(a.followup))/864e5);
+    const cls=days>0?'overdue':'today';
+    const when=days>0?`${days} ${t('days_late')}`:t('today_w');
+    return `<div class="rem ${cls}"><span class="dot" aria-hidden="true"></span><span>${esc(t('follow_up_with'))} <b>${esc(a.company)}</b> — ${esc(a.role)}</span><span class="when">${esc(when)}</span></div>`;
+  }).join('');
+}
+
+/* ---------- Table ---------- */
+function statusSelect(a){
+  return `<select class="badge-sel st-${a.status}" data-id="${a.id}" aria-label="Status">${STATUSES.map(s=>`<option value="${s}" ${s===a.status?'selected':''}>${esc(t(s))}</option>`).join('')}</select>`;
+}
+function renderTable(){
+  const box=document.getElementById('tableBox');
+  const T=todayStr();
+  if(!apps.length){
+    box.innerHTML=`<div class="empty"><h3>${esc(t('empty_h'))}</h3><p>${esc(t('empty_p'))}</p><button class="btn btn-acc" id="sampleBtn">${esc(t('load_sample'))}</button></div>`;
+    const sb=document.getElementById('sampleBtn');
+    if(sb)sb.addEventListener('click',()=>{apps=sample();save();render();});
+    return;
+  }
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const stf=document.getElementById('stFilter').value||'';
+  let rows=apps.filter(a=>(!q||(a.company+' '+a.role+' '+a.notes).toLowerCase().includes(q))&&(!stf||a.status===stf));
+  rows.sort((a,b)=>(b.applied||'')<(a.applied||'')?-1:1);
+  if(!rows.length){box.innerHTML=`<p class="empty-min">${esc(t('no_matches'))}</p>`;return;}
+  box.innerHTML=`<table><thead><tr><th>${esc(t('th_co'))}</th><th>${esc(t('th_st'))}</th><th>${esc(t('th_ap'))}</th><th>${esc(t('th_fu'))}</th><th>${esc(t('th_no'))}</th><th></th></tr></thead><tbody>`+
+  rows.map(a=>{
+    let fuCls='';if(a.followup&&['saved','applied','screening','interview'].includes(a.status)){if(a.followup<T)fuCls='overdue';else if(a.followup===T)fuCls='today';}
+    const co=a.link?`<a href="${esc(a.link)}" target="_blank" rel="noopener" class="co">${esc(a.company)}</a>`:`<span class="co">${esc(a.company)}</span>`;
+    return `<tr><td>${co}<div class="role">${esc(a.role)}</div></td>`+
+      `<td>${statusSelect(a)}</td>`+
+      `<td class="date-cell">${fmtDate(a.applied)}</td>`+
+      `<td class="date-cell ${fuCls}">${fmtDate(a.followup)}</td>`+
+      `<td class="notes-cell" title="${esc(a.notes)}">${esc(a.notes)||'–'}</td>`+
+      `<td style="white-space:nowrap"><button class="row-btn" data-edit="${a.id}" aria-label="Edit">✎</button><button class="row-btn" data-del="${a.id}" aria-label="Delete">✕</button></td></tr>`;
+  }).join('')+'</tbody></table>';
+  box.querySelectorAll('select.badge-sel').forEach(sel=>sel.addEventListener('change',e=>{
+    const a=apps.find(x=>x.id===e.target.dataset.id);if(a){a.status=e.target.value;save();render();}
+  }));
+  box.querySelectorAll('[data-edit]').forEach(b=>b.addEventListener('click',()=>openDlg(b.dataset.edit)));
+  box.querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',()=>{
+    if(confirm(t('del_confirm'))){apps=apps.filter(x=>x.id!==b.dataset.del);save();render();}
+  }));
+}
+function renderFilter(){
+  const sel=document.getElementById('stFilter');const cur=sel.value;
+  sel.innerHTML=`<option value="">${esc(t('all'))}</option>`+STATUSES.map(s=>`<option value="${s}">${esc(t(s))}</option>`).join('');
+  sel.value=cur;
+}
+
+/* ---------- Dialog ---------- */
+const dlg=document.getElementById('dlg');
+function fillStatusOptions(){document.getElementById('f-st').innerHTML=STATUSES.map(s=>`<option value="${s}">${esc(t(s))}</option>`).join('');}
+function openDlg(id){
+  editingId=id||null;fillStatusOptions();
+  document.getElementById('dlgTitle').textContent=id?t('d_edit'):(lang==='ar'?AR_STATIC.d_add:EN_STATIC.d_add);
+  const a=id?apps.find(x=>x.id===id):null;
+  document.getElementById('f-co').value=a?a.company:'';
+  document.getElementById('f-role').value=a?a.role:'';
+  document.getElementById('f-link').value=a?a.link:'';
+  document.getElementById('f-st').value=a?a.status:'applied';
+  document.getElementById('f-date').value=a?a.applied:todayStr();
+  document.getElementById('f-fu').value=a?a.followup:'';
+  document.getElementById('f-notes').value=a?a.notes:'';
+  dlg.showModal();
+}
+document.getElementById('addBtn').addEventListener('click',()=>openDlg(null));
+document.getElementById('cancelBtn').addEventListener('click',()=>dlg.close());
+document.getElementById('appForm').addEventListener('submit',e=>{
+  const co=document.getElementById('f-co').value.trim(),role=document.getElementById('f-role').value.trim();
+  if(!co||!role){e.preventDefault();return;}
+  const rec={company:co,role:role,link:document.getElementById('f-link').value.trim(),status:document.getElementById('f-st').value,applied:document.getElementById('f-date').value,followup:document.getElementById('f-fu').value,notes:document.getElementById('f-notes').value.trim()};
+  if(demoMode){demoMode=false;} /* first real edit exits demo mode and persists everything */
+  if(editingId){Object.assign(apps.find(x=>x.id===editingId),rec);}else{apps.push(Object.assign({id:uid()},rec));}
+  localStorage.setItem('rt-jobs',JSON.stringify(apps));
+  render();
+});
+
+/* ---------- CSV ---------- */
+document.getElementById('csvBtn').addEventListener('click',()=>{
+  const cols=[['csv_co','company'],['csv_role','role'],['csv_status','status'],['csv_ap','applied'],['csv_fu','followup'],['csv_link','link'],['csv_no','notes']];
+  const head=cols.map(c=>t(c[0])).join(',');
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+  const lines=apps.map(a=>cols.map(c=>q(c[1]==='status'?t(a.status):a[c[1]])).join(','));
+  const csv='\uFEFF'+head+'\n'+lines.join('\n');
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8'});
+  const url=URL.createObjectURL(blob);const aEl=document.createElement('a');
+  aEl.href=url;aEl.download='job-applications-'+todayStr()+'.csv';document.body.appendChild(aEl);aEl.click();aEl.remove();URL.revokeObjectURL(url);
+});
+
+/* ---------- Theme & language ---------- */
+function applyTheme(){document.documentElement.setAttribute('data-theme',theme);document.getElementById('themeBtn').textContent=theme==='dark'?'☀':'☾';}
+function applyLang(){
+  const dict=lang==='ar'?AR_STATIC:EN_STATIC;
+  document.querySelectorAll('[data-i18n]').forEach(el=>{const k=el.getAttribute('data-i18n');if(dict[k]!==undefined)el.innerHTML=dict[k];});
+  document.getElementById('q').placeholder=dict.search_ph||EN_STATIC.search_ph;
+  document.documentElement.lang=lang;document.documentElement.dir=lang==='ar'?'rtl':'ltr';
+  document.getElementById('langBtn').textContent=lang==='ar'?'English':'العربية';
+}
+document.getElementById('themeBtn').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';localStorage.setItem('rt-theme',theme);applyTheme();});
+document.getElementById('langBtn').addEventListener('click',()=>{lang=lang==='ar'?'en':'ar';localStorage.setItem('rt-lang',lang);applyLang();renderFilter();render();});
+document.getElementById('q').addEventListener('input',renderTable);
+document.getElementById('stFilter').addEventListener('change',renderTable);
+
+function render(){computeKpis();renderWeekChart();renderFunnel();renderReminders();renderTable();}
+applyTheme();applyLang();renderFilter();render();
+document.getElementById('yr').textContent=new Date().getFullYear();
+</script>
+</body>
+</html>
